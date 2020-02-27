@@ -32,23 +32,24 @@ def SampleData(size=100):
 """Generic code to hande labels/axis etc."""
 def AxisControl(legend, axis, label, x_axis, y_axis):
     if axis is True:
-        plt.xlabel(x_axis)
-        plt.ylabel(y_axis)
+        plt.xlabel(x_axis, fontsize=14)
+        plt.ylabel(y_axis, fontsize=14)
     #plt.title('title')
     if legend is True:
-        plt.legend()
+        plt.legend(fontsize=14)
     plt.tight_layout()
 
 
 """Plots a line graph with errors"""
-def ErrorPlot(data, legend=False, axis=False, label='', x_axis='', y_axis='', x_error=None, y_error=None, capsize=5):
-    plt.errorbar(data[0], data[1], y_error, x_error, capsize=capsize)
+def ErrorPlot(data, legend=False, axis=False, label='', x_axis='', y_axis='', x_error=None, y_error=None, capsize=5, linestyle='', marker='o', markersize=5):
+    plot = plt.errorbar(data[0], data[1], y_error, x_error, capsize=capsize, linestyle=linestyle, marker=marker, markersize=markersize, label=label)
     AxisControl(legend, axis, label, x_axis, y_axis)
+    return plot
 
 
 """Plots a Histogram (What else?)"""
-def Histogram(data, legend=False, axis=False, label='', x_axis='', y_axis='', bins=50, density=False, histtype='bar', edgecolor='black', linewidth=1.2, alpha=0.25):
-    plt.hist(data, label=label, bins=bins, density=density, histtype=histtype, edgecolor=edgecolor, linewidth=linewidth, alpha=alpha)
+def Histogram(data, legend=False, axis=False, label='', x_axis='', y_axis='', bins=50, density=False, histtype='bar', edgecolor='black', linewidth=1.2, alpha=0.25, weights=None):
+    plt.hist(data, label=label, bins=bins, density=density, histtype=histtype, edgecolor=edgecolor, linewidth=linewidth, alpha=alpha, weights=weights)
     AxisControl(legend, axis, label, x_axis, y_axis)
 
 
@@ -75,10 +76,10 @@ def BWMulti(x, A1, M1, T1, A2, M2, T2, A3, M3, T3):#, M4, T4, M5, T5):
 
 
 """Fits Breit Wigner curve to invariant mass plots and returns resonance mass and lifetime in MeV"""
-def BWCurveFit(data, legend=False, axis=False, label='', x_axis='', y_axis='', lines=False, single=True, fit_parameters=[1, 1, 1]):
+def BWCurveFit(data, legend=False, axis=False, label='', x_axis='', y_axis='', lines=False, single=True, fit_parameters=[1, 1, 1], weights=None, binWidth=0.01, binNum=50):
     """E must be in units of GeV"""
     data = data/1000
-    hist, bins = np.histogram(data, bins=50, density=1)
+    hist, bins = np.histogram(data, bins=binNum, density=1, weights=weights)
     x = (bins[:-1] + bins[1:])/2  # center of bins
 
     if single is True:
@@ -103,7 +104,7 @@ def BWCurveFit(data, legend=False, axis=False, label='', x_axis='', y_axis='', l
 
     p = stats.norm.ppf(p)
 
-    plt.bar(x, hist, 0.01, alpha=0.5, label=label)
+    plt.bar(x, hist, binWidth, alpha=0.5, label=label)
     plt.plot(x_inter, y)
     if lines is True:
         if single is True:

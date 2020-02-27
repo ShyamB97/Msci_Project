@@ -17,7 +17,7 @@ from scipy.optimize import curve_fit
 from math import log10, floor
 from scipy.special import factorial
 import glob
-
+import pandas as pd
 
 def round_to(x, y):
     return round(x, -int(floor(log10(abs(y)))))
@@ -136,9 +136,9 @@ def Data_Save(repeats):
 def CPConvergenceTest():
     value = []
     error = []
-    eventFiles = dm.GetFileNames('\samples')
-    eventFiles_CP = dm.GetFileNames('\samplesCP')
-    for i in range(10):
+    eventFiles = dm.GetFileNames('\Samples')
+    eventFiles_CP = dm.GetFileNames('\Samples_CP')
+    for i in range(len(eventFiles)):
         p = dm.AmpGendf(eventFiles[i], False)
         pbar = dm.AmpGendf(eventFiles_CP[i], True)
 
@@ -152,7 +152,7 @@ def CPConvergenceTest():
         value.append(A_CP[0])
         error.append(A_CP[1])
 
-    pt.ErrorPlot([np.linspace(1, 10, 10), value], axis=True, y_error=error, x_axis="Number of Events ($10^{5}$)", y_axis="$\mathcal{A}_{CP}$")
+    pt.ErrorPlot([np.linspace(1, 10, len(eventFiles)), value], axis=True, y_error=error, x_axis="Number of Events ($10^{5}$)", y_axis="$\mathcal{A}_{CP}$")
 
 
 """Checks if the seed of the generator significantly affects A_CP"""
@@ -184,13 +184,17 @@ def PWaveAmp_test():
     fileNames = dm.GetFileNames('\Amp_test')
     rel_Amp = []
     for i in range(len(fileNames)):
-        string = fileNames[i][16:-5]
+        string = fileNames[i][15:-4]
+        #string = fileNames[i][15:-8]
+        #string = fileNames[i][27:-5]
         num = float(string)
         rel_Amp.append(num)
 
     zipped_1 = zip(rel_Amp, fileNames)
-    fileNames = [x for _, x in sorted(zipped_1)]
-    rel_Amp = sorted(rel_Amp)
+    fileNames = [x for _, x in natsorted(zipped_1, alg=ns.IGNORECASE)]
+    rel_Amp = natsorted(rel_Amp, alg=ns.IGNORECASE)
+
+    factors = [1E-5, 1E-4, 1E-3, 1E-2, 1E-1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 1E1, 1E2, 1E3, 1E4, 1E5]
 
     value = []
     error = []
@@ -201,48 +205,40 @@ def PWaveAmp_test():
         value.append(A_T[0])
         error.append(A_T[1])
 
-    pt.ErrorPlot([rel_Amp, value], axis=True, y_error=error, x_axis="relative P-wave amplitudes", y_axis="$A_{T}$")
+    pt.ErrorPlot([factors, value], axis=True, y_error=error, x_axis="relative P-wave amplitudes", y_axis="$A_{T}$")
+    return value, error
 
 
-"""Main Body"""
-#p = dm.AmpGendf('B_times_test2.root', False)
-#pbar = dm.AmpGendf('B_0.1M_S10.root', True)
 
-#C_T = kin.Scalar_TP(kin.Vector_3(p['p_3']), kin.Vector_3(p['p_4']), kin.Vector_3(p['p_1']))
-#C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar['p_3']), kin.Vector_3(pbar['p_4']), kin.Vector_3(pbar['p_1']))
 
-#A_T = kin.TP_Amplitude(C_T)
+
+#"""Main Body"""
+"""
+datas = dm.GenerateDataFrames('\Phase-0', False)
+datas_CP = dm.GenerateDataFrames('\Phase-0_CP', True)
+
+p = datas[9*10:(9+1)*10]
+p = dm.MergeData(p)
+pbar = datas_CP[9*10:(9+1)*10]
+pbar = dm.MergeData(pbar)
+
+C_T = kin.Scalar_TP(kin.Vector_3(p[3]), kin.Vector_3(p[4]), kin.Vector_3(p[1]))
+C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar[3]), kin.Vector_3(pbar[4]), kin.Vector_3(pbar[1]))
+
+A_T = kin.TP_Amplitude(C_T)
+"""
+
+df = pd.read_pickle('Data_sig_tos_weights.pkl')
+opt_cut = 0.9979
+df = df[df.NN_weights > opt_cut]
+### to remove multiple candidates if you care – there are about 1-2% of these
+df = df.drop_duplicates(subset = ['runNumber', 'eventNumber'], keep = 'first')
+sWeights = df.sWeights.to_numpy()
+names = df.head()
 #A_Tbar = kin.TP_Amplitude(C_Tbar)
 
 #A_CP = kin.A_CP(A_T, A_Tbar)
 
-#sigma = abs(A_CP[0]/A_CP[1])
-
-samples = np.array([1E4, 4E4, 9E4, 16E4, 25E4, 36E4, 49E4, 64E4, 81E4])
-times = np.array([34, 86, 172, 301, 466, 699, 876, 1130, 1461])
-
-grad, _ = np.polyfit(samples, times, 1)
-
-samplestoTest = np.linspace(int(1E2), int(1E3), 10)**2
-
-time_take = (grad *samplestoTest)/60
-total_time = np.sum(time_take)
-plt.plot(samples, times, marker='o', markersize=5)
-
-"""
-intervals = [1, 3, 5]
-labels = []
-for i in range(len(intervals)):
-    samples = st.Search_CP(3E6, 1E7, 10, A_T, A_Tbar, intervals[i])
-    samples = samples/int(1E6)
-    label = str(intervals[i]) + '$\\sigma$| events = ' + str(samples) + '$\\times10^{6}$'
-    labels.append(label)
-
-plt.legend(labels, fontsize=14)
-plt.xlabel("MC $\mathcal{A}_{CP}$ distribution", fontsize=14)
-plt.ylabel("weighted events", fontsize=14)
-plt.tight_layout()
-"""
 
 
 

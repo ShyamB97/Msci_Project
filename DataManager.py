@@ -6,8 +6,10 @@ Created on Mon Feb  3 12:24:13 2020
 """
 
 import uproot
+from natsort import natsorted, ns
 import numpy as np
 import os
+import pandas as pd
 
 """Will reuturn the root filenames in a given directory"""
 def GetFileNames(directory='\samples'):
@@ -89,8 +91,58 @@ def SplitEvents(particles, number = 10):
     return data
 
 
+"""Get mutiple dataframes in a list from a directory"""
+def GenerateDataFrames(directory, CP):
+    fileNames = GetFileNames(directory)
+    fileNames = natsorted(fileNames, alg=ns.IGNORECASE)  # sorted by amplitudes
+
+    """Produce dataframes for each file"""
+    data = []
+    for i in range(len(fileNames)):
+        p = AmpGendf(fileNames[i], CP)
+        data.append(p)
+    return data
 
 
+"""Merges dataframes into a single list of values (preserves order)"""
+def MergeData(lst, dfs=10):
+    data_full = []
+    for i in range(5):
+        particle = []
+        name = 'p_' + str(i)
+        for j in range(dfs):
+            particle.append(lst[j][name])
+        data_full.append(np.vstack(particle))
+    return data_full
+
+
+"""Used to construct numpy 4-Vectors from the real data set."""
+def ConstructParticle(particleName, df):
+    component_name = ['_PE', '_PX', '_PY', '_PZ']
+    component = []
+    for i in range(len(component_name)):
+        component.append(df[particleName + component_name[i]].to_numpy())
+    return np.vstack(component).T
+
+
+"""Reads the Real Data (stored in a pickle file) and returns particles dictionary and the signal weightings"""
+def ReadRealData():
+    df = pd.read_pickle('Data_sig_tos_weights.pkl')
+    opt_cut = 0.9979
+    df = df[df.NN_weights > opt_cut]
+    ### to remove multiple candidates if you care – there are about 1-2% of these
+    df = df.drop_duplicates(subset = ['runNumber', 'eventNumber'], keep = 'first')
+    sWeights = df.sWeights.to_numpy()
+
+    p_0 = ConstructParticle('B0', df)
+    p_1 = ConstructParticle('D0', df)
+    p_2 = ConstructParticle('D0bar', df)
+    p_3 = ConstructParticle('K_Kst0', df)
+    p_4 = ConstructParticle('Pi_Kst0', df)
+    
+    particles = {'p_0': p_0, 'p_1': p_1, 'p_2': p_2, 'p_3': p_3, 'p_4': p_4}
+    
+    return particles, sWeights
 
 
 
