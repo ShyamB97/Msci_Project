@@ -69,7 +69,7 @@ def AmpGendf(filename='output.root', CP=False):
 
 
 """If a eventfile is too large to interpret, this will split the data set into smaller ones"""
-def SplitEvents(particles, number = 10):
+def SplitEvents(particles, number=10):
     events = np.size(particles['p_0'], 0)
     segments= int(events/number)
     p = []
@@ -82,10 +82,10 @@ def SplitEvents(particles, number = 10):
     data = []
     for i in range(number):
         p_0 = p[0 + i]
-        p_1 = p[10 + i]
-        p_2 = p[20 + i]
-        p_3 = p[30 + i]
-        p_4 = p[40 + i]
+        p_1 = p[1*number + i]
+        p_2 = p[2*number + i]
+        p_3 = p[3*number + i]
+        p_4 = p[4*number + i]
         subset = {'p_0': p_0, 'p_1': p_1, 'p_2': p_2, 'p_3': p_3, 'p_4': p_4}
         data.append(subset)
     return data
@@ -116,13 +116,16 @@ def MergeData(lst, dfs=10):
     return data_full
 
 
-"""Used to construct numpy 4-Vectors from the real data set."""
-def ConstructParticle(particleName, df):
+"""Used to construct numpy 4-Vectors from the real data set. Splits into regular and conjugate decays"""
+def ConstructParticle(particleName, df, tags):
     component_name = ['_PE', '_PX', '_PY', '_PZ']
     component = []
     for i in range(len(component_name)):
         component.append(df[particleName + component_name[i]].to_numpy())
-    return np.vstack(component).T
+    component = np.vstack(component).T
+    p = component[tags > 0]
+    pbar = component[tags < 0]
+    return p, pbar
 
 
 """Reads the Real Data (stored in a pickle file) and returns particles dictionary and the signal weightings"""
@@ -132,25 +135,19 @@ def ReadRealData():
     df = df[df.NN_weights > opt_cut]
     ### to remove multiple candidates if you care – there are about 1-2% of these
     df = df.drop_duplicates(subset = ['runNumber', 'eventNumber'], keep = 'first')
+    
     sWeights = df.sWeights.to_numpy()
+    Ktags = df["K_Kst0_ID"].to_numpy()
 
-    p_0 = ConstructParticle('B0', df)
-    p_1 = ConstructParticle('D0', df)
-    p_2 = ConstructParticle('D0bar', df)
-    p_3 = ConstructParticle('K_Kst0', df)
-    p_4 = ConstructParticle('Pi_Kst0', df)
+    p_0 = ConstructParticle('B0', df, Ktags)
+    p_1 = ConstructParticle('D0', df, Ktags)
+    p_2 = ConstructParticle('D0bar', df, Ktags)
+    p_3 = ConstructParticle('K_Kst0', df, Ktags)
+    p_4 = ConstructParticle('Pi_Kst0', df, Ktags)
     
-    particles = {'p_0': p_0, 'p_1': p_1, 'p_2': p_2, 'p_3': p_3, 'p_4': p_4}
+    particles = {'p_0': p_0[0], 'p_1': p_1[0], 'p_2': p_2[0], 'p_3': p_3[0], 'p_4': p_4[0]}
+    particlesbar = {'p_0': p_0[1], 'p_1': p_1[1], 'p_2': p_2[1], 'p_3': p_3[1], 'p_4': p_4[1]}
     
-    return particles, sWeights
-
-
-
-
-
-
-
-
-
-
-
+    weights = sWeights[Ktags > 0]
+    weightsbar = sWeights[Ktags < 0]
+    return particles, particlesbar, weights, weightsbar
