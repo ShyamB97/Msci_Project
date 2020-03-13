@@ -2,26 +2,27 @@
 """
 Created on Mon Feb 24 14:01:10 2020
 
-@author: bhull
+@author: Shyam Bhuller
+
+@Descripton: Bins data in the phase space and calculates the asymmetries in each region.
+Cuts for the same axis is cosntant per region and only 1 cut per axis is done (this makes 32 regions so is
+more than enough to study). Could support more cuts (Unlikely).
 """
-
-import uproot
+import Kinematic as kin  # vecotrised 4-vector kineamtics
+import Plotter as pt  # generic plotter with consistent formatting and curve fitting
+import DataManager as dm  # handles data opened from data files
 from math import log10, floor
-from scipy.special import factorial
 import numpy as np
-import Kinematic as kin
-import DataManager as dm
 import matplotlib.pyplot as plt
-import Plotter as pt
-import os
 
-
+"""rounds x to the 1st significant figure of y"""
 def round_to(x, y):
     return round(x, -int(floor(log10(abs(y)))))
 
 
 """Maps CM variables to the parameter number for easy use"""
 def GetParameter(parameter):
+    global m12, m34, hel_1, hel_3, phi
     if(parameter == 1):
         return m12
     if(parameter == 2):
@@ -42,10 +43,10 @@ def Cut(lst, cuts, i, j):
 
 
 """Slices data into 2 bins which contain the index number only.
-   Does this for 2 bins only (could enlargen)"""
+   Does this for 2 bins only."""
 def CutData(values, parameter, cut):
     out = []
-    for i in range(2):
+    for i in range(len(cut)-1):
         ind = []
         for val in range(len(values)):
             val = Cut(parameter, cut, i, val)  # check if data is in range of bin widths
@@ -83,7 +84,6 @@ def Bin_algorithm(parameter, values, incriments):
 
             """if statement avoids double counting and zero width bins"""
             if cut_min != cut_max and cut_max > cut_min:
-                #print('trying: ' + str(cut_min) + ', ' + str(cut_max))
                 cut = np.linspace(cut_min, cut_max, 3)  # cuts the data at the midpoint
                 ranges.append(cut) # store the bin range
                 out = CutData(values, parameter, cut)  # cuts the data and returns the indicies of values
@@ -191,24 +191,24 @@ def GetBinEdges(cuts):
 """Generates 5 of the 34 possible parameters to calculate the LIPS. splits data into parity even/odd bins"""
 def DalitzParameters(particles, CP=False):
     if CP is True:
-        f = -1
+        f = -1  # CP needs to flip sign of C_Tbar
     else:
         f = 1
-    #C_Tl, C_Tu = kin.Segment_TP(particles)  # splits data into parity odd-even
 
-    # Helicity angles
-    cos_p_1 = kin.HelicityAngle(particles['p_1'] + particles['p_2'], particles['p_0'], particles['p_1'])
+    """Helicity angles"""
+    cos_p_1 = kin.HelicityAngle(particles['p_1'] + particles['p_2'], particles['p_0'], particles['p_1'])  # helicity angle of p1
 
-    cos_p_3 = kin.HelicityAngle(particles['p_3'] + particles['p_4'], particles['p_0'], particles['p_3'])
+    cos_p_3 = kin.HelicityAngle(particles['p_3'] + particles['p_4'], particles['p_0'], particles['p_3'])  # helicity angle of p3
 
-    # Invariant masses
-    m_12 = kin.Mag_4(particles['p_1'] + particles['p_2'])
+    """Invariant masses"""
+    m_12 = kin.Mag_4(particles['p_1'] + particles['p_2'])  # invariant mass of p1p2
 
-    m_34 = kin.Mag_4(particles['p_3'] + particles['p_4'])
+    m_34 = kin.Mag_4(particles['p_3'] + particles['p_4']) # .. p3p4
 
-    # Decay plane angle
+    """Decay plane angle"""
     phi = kin.Decay_Plane_Angle(particles['p_0'], particles['p_1'], particles['p_2'], particles['p_3'], particles['p_4'])
 
+    """scalar triple product momentum"""
     C_T = f * kin.Scalar_TP(kin.Vector_3(particles['p_3']), kin.Vector_3(particles['p_4']), kin.Vector_3(particles['p_1']))
 
     return [cos_p_1, cos_p_3, m_12, m_34, phi, C_T]
@@ -223,7 +223,7 @@ def MultiSampleDalitzParameters(particles, CP=False, splitNum=100):
     """Calcualte CM variables and C_T"""
     for d in data:
         progress += 1
-        print(progress/len(data) * 100)
+        print("\r"+str(round(progress/len(data) * 100, 2)), end="")
         params = DalitzParameters(d, CP)  # calulate statistics for the data set
         parameters.append(params)
 
@@ -243,114 +243,118 @@ def MultiSampleDalitzParameters(particles, CP=False, splitNum=100):
     return final_data
 
 
-def SortAsymmetries():
-    sortby1 = edges[0][4]
-    sortby2 = edges[16][4]
-    edge1 = []
-    edge2 = []
+"""Will load data with 1M regular and 1M conjugate decays and will bin and compute the asymmetries per bin and save them into a file"""
+def CreateData():
+    order = [3, 4, 2, 1, 5]  # order of the CM variable in which to bin
+    iterations = [2, 2, 2, 8, 2]  # how many different bin regions should we permute through
+    r = [False, False, True, False, False]  # which CM variable should we bin near the resonance
 
-    A_T_1 = []
-    A_T_2 = []
+    print('loading data')
+    datas = dm.GenerateDataFrames('\P45_A0.75_1M', False)  # load regular particle dictionaries, each one has a unique random seed
+    datas_CP = dm.GenerateDataFrames('\P45_A0.75_1M_CP', True)  # load conjugate particle dictionary
 
-    A_Tbar_1 = []
-    A_Tbar_2 = []
+    p = dm.MergeData(datas)  # merge the samples into one
+    pbar = dm.MergeData(datas_CP)
 
-    A_CP_1 = []
-    A_CP_2 = []
-
-    for i in range(len(edges)):
-        if edges[i][4] == sortby1:
-            A_T_1.append(A_Ts[i])
-            A_Tbar_1.append(A_Tbars[i])
-            A_CP_1.append(A_CPs[i])
-            edge1.append(edges[i])
-        if edges[i][4] == sortby2:
-            A_T_2.append(A_Ts[i])
-            A_Tbar_2.append(A_Tbars[i])
-            A_CP_2.append(A_CPs[i])
-            edge2.append(edges[i])
+    p = {'p_0': p[0], 'p_1': p[1], 'p_2': p[2], 'p_3': p[3], 'p_4': p[4]}  # recreate the particle dictionary
+    pbar = {'p_0': pbar[0], 'p_1': pbar[1], 'p_2': pbar[2], 'p_3': pbar[3], 'p_4': pbar[4]}
 
 
-    A_T_new = A_T_1 + A_T_2
-    A_Tbar_new = A_Tbar_1 + A_Tbar_2
-    A_CP_new = A_CP_1 + A_CP_2
+    print("calculating CM variables and C_T")
+    hel_1, hel_3, m12, m34, phi, C_T = MultiSampleDalitzParameters(p, False, 1000)  # get CM variables and C_T of regular decays
+    print("\nA_T\n: " + str(kin.TP_Amplitude(C_T)))  # print asymmetry over all phasespace
+    print("\nbinning data")
+    bins, edges = BinData(order, iterations, C_T, 100000, r)  # bin C_T and return the bin regions
+
+    print("calculating CM variables and C_Tbar")
+    hel_1, hel_3, m12, m34, phi, C_Tbar = MultiSampleDalitzParameters(pbar, True, 1000)  # get CM variables and C_T of regular decays
+    print("\nA_Tbar\n: " + str(kin.TP_Amplitude(C_Tbar)))
+    print("\nbinning data")
+
+    """We want to bin C_T wrt to bin regions optimised for A_T. this keeps the regions consistent when
+    calculating A_CP."""
+    bins_CP = []  # bin list for the conugate decays
+    parameters = [GetParameter(order[0]), GetParameter(order[1]), GetParameter(order[2]), GetParameter(order[3]), GetParameter(order[4])]  # get parameters in order of previous binning scheme
+    """finds the values of C_T which satisfies all the bin regions"""
+    for i in range(32):
+        tmp = []
+        for j in range(len(C_Tbar)):
+            if(parameters[0][j] >= edges[i][0][0] and parameters[0][j] <= edges[i][0][1]):
+                if(parameters[1][j] >= edges[i][1][0] and parameters[1][j] <= edges[i][1][1]):
+                    if(parameters[2][j] >= edges[i][2][0] and parameters[2][j] <= edges[i][2][1]):
+                        if(parameters[3][j] >= edges[i][3][0] and parameters[3][j] <= edges[i][3][1]):
+                            if(parameters[4][j] >= edges[i][4][0] and parameters[4][j] <= edges[i][4][1]):
+                                tmp.append(C_T[j])
+        bins_CP.append(tmp)
 
 
-"""Main Body"""
-
-print('loading data')
-datas = dm.GenerateDataFrames('\P45_A0.75_1M', False)
-datas_CP = dm.GenerateDataFrames('\P45_A0.75_1M_CP', True)
-
-print('selecting sample')
-p = datas[9*10:(9+1)*10]
-p = dm.MergeData(datas)
-pbar = datas_CP[9*10:(9+1)*10]
-pbar = dm.MergeData(datas_CP)
-
-p = {'p_0': p[0], 'p_1': p[1], 'p_2': p[2], 'p_3': p[3], 'p_4': p[4]}
-pbar = {'p_0': pbar[0], 'p_1': pbar[1], 'p_2': pbar[2], 'p_3': pbar[3], 'p_4': pbar[4]}
-
-#m12 = kin.Mag_4(p[1] + p[2])
-#m34 = kin.Mag_4(p[3] + p[4])
-#hel_1 = kin.HelicityAngle(p[1] + p[2], p[0], p[1])
-#hel_3 = kin.HelicityAngle(p[3] + p[4], p[0], p[3])
-#phi = kin.Decay_Plane_Angle(*p)
-
-print("calculating CM variables and C_T/C_Tbar")
-hel_1, hel_3, m12, m34, phi, C_T = MultiSampleDalitzParameters(p, False, 1000)
-_, _, _, _, _, C_Tbar = MultiSampleDalitzParameters(pbar, True, 1000)
+    print("calculating asymmetries")
+    A_Ts = []
+    A_Tbars = []
+    A_CPs = []
+    """For each bin, calculate the asymmetries"""
+    for i in range(len(bins)):
+        A_T = kin.TP_Amplitude(bins[i])  # P asymmetry (includes error)
+        A_Tbar = kin.TP_Amplitude(bins_CP[i])  # P asymmetry of conjugate decay
+        A_CP = kin.A_CP(A_T, A_Tbar)  # CP asymmetry
+        A_Ts.append(A_T)
+        A_Tbars.append(A_Tbar)
+        A_CPs.append(A_CP)
 
 
-#order = [2, 3, 5, 1, 4]
-#iterations = [1, 2, 2, 10, 30]
-#r = [True, True, False, False, False]
+    zipped = list(zip(edges, A_CPs, A_Ts, A_Tbars))  # keep these parameters in a zipped object
+    # randomly shuffle the bin regions.
+    #This randomly assigns a bin region to a number (its index in the list)
+    #required to remove a bias in the numbering due to the binning scheme.
+    np.random.shuffle(zipped)
 
-order = [3, 4, 2, 1, 5]
-iterations = [2, 2, 2, 8, 2]
-r = [False, False, True, False, False]
+    edges, A_CPs, A_Ts, A_Tbars = zip(*zipped)  # unzip data
 
-print("binning data")
-bins_CP, edges_CP = BinData(order, iterations, C_Tbar, 100000, r)
-bins, edges = BinData(order, iterations, C_T, 100000, r)
-
-print("calculating asymmetries")
-A_Ts = []
-A_Tbars = []
-A_CPs = []
-for i in range(len(bins)):
-    A_T = kin.TP_Amplitude(bins[i])
-    A_Tbar = kin.TP_Amplitude(bins_CP[i])
-    A_CP = kin.A_CP(A_T, A_Tbar)
-    A_Ts.append(A_T)
-    A_Tbars.append(A_Tbar)
-    A_CPs.append(A_CP)
+    np.save("bin_edges.npy", edges)  # save data into a numpy array, dont want to spend forever recalculating these if possible
+    np.save("bin_A_T.npy", A_Ts)
+    np.save("bin_A_Tbar.npy", A_Tbars)
+    np.save("bin_A_CP.npy", A_CPs)
 
 
-bin_regions = np.linspace(1, 32, 32)
+"""Will print a table of all the bin regions, formatted for use in excel/latex"""
+def PrintBins(bin_regions, edges):
+    print("cos(theta_D)  | cos(theta_pi) |    m_Kpi     |     m_DDbar       |    phi")  # labels
+    """Constructs the row for a single region and prints it"""
+    for i in range(len(bin_regions)):
+        regions = edges[i]
+        strings = ["(" + str(round(regions[x][0], 2)) + ", " + str(round(regions[x][1], 2)) + ")" for x in range(5)]  # creates the bin region per CM variable in a string, up to 2 significant figures
+        string = " |& ".join(strings)  # join the strings by the defined one, helpful for Latexformatting
+        print(string, r"\\")  # pad with \\ for Latex formatting
 
 
-ax = plt.subplot(131)
-Asym_mean = [A_Ts[i][0] for i in range(len(A_Ts))]
-Asym_error = [A_Ts[i][1] for i in range(len(A_Ts))]
-pt.ErrorPlot([bin_regions, Asym_mean], axis=True, x_axis='Bin Region', y_axis='Asymmetry value', y_error=Asym_error, legend=True, label='$A_{T}$')
+"""Plots the asymmetries for each bin as well as the mean value of the asymmetries with confidence intervals"""
+def PlotData(A_Ts, A_Tbars, A_CPs):
+    Asyms = [A_Ts, A_Tbars, A_CPs]  # stores values in a list for easy access
+    labels = ['$A_{T}$', '$\\bar{A}_{T}$', '$\mathcal{A}_{CP}$']  # labels for each plot
 
-ax = plt.subplot(132)
-Asym_mean = [A_Tbars[i][0] for i in range(len(A_Tbars))]
-Asym_error = [A_Tbars[i][1] for i in range(len(A_Tbars))]
-pt.ErrorPlot([bin_regions, Asym_mean], axis=True, x_axis='Bin Region', y_axis='Asymmetry value', y_error=Asym_error, legend=True, label='$\\bar{A}_{T}$')
-
-ax = plt.subplot(133)
-Asym_mean = [A_CPs[i][0] for i in range(len(A_CPs))]
-Asym_error = [A_CPs[i][1] for i in range(len(A_CPs))]
-pt.ErrorPlot([bin_regions, Asym_mean], axis=True, x_axis='Bin Region', y_axis='Asymmetry value', y_error=Asym_error, legend=True, label='$\mathcal{A}_{CP}$')
-
-
-
-
-
-
-
+    plot = 131  # 1 row, 3 columns, start at 1st postition
+    """Loops through each figure and plots the asymmetry, global asymmetry and 1 and 5 sigma error bars for the global asymmetry"""
+    for i in range(len(Asyms)):
+        ax = plt.subplot(plot+i)  # create the subplot
+        Asym_mean = [Asyms[i][j][0] for j in range(len(Asyms[i]))]  # get mean values
+        avg = np.mean(Asym_mean)  # get global asymmetry
+        Asym_error = [Asyms[i][j][1] for j in range(len(Asyms[i]))]  # get uncertainties
+        avg_error = np.mean(Asym_error)  # get global uncertainty
+        pt.ErrorPlot([bin_regions, Asym_mean], axis=True, x_axis='Bin Region', y_axis='Asymmetry value', y_error=Asym_error, legend=True, label=labels[i])  # plot bin region values
+        plt.hlines(avg, -5, 35, linestyle='--')  # plot line indicating the global asymmetry
+        plt.fill_between(np.linspace(-5, 35, 40), avg + avg_error, avg - avg_error, color="black", alpha=0.1)  # 1 sigma global uncertainty region
+        plt.fill_between(np.linspace(-5, 35, 40), avg + 5*avg_error, avg - 5*avg_error, color="black", alpha=0.1)  # 5 sigma global uncertainty region
+        ax.set_ylim((-0.1, 0.1))  # det plot limits equal to each other for easy interpretation
+        ax.set_xlim((-5, 35))
 
 
+"""Main Body Call the functions above here or in the spyder terminal."""
+# if data hasn't been made, call that function first
+bin_regions = np.linspace(1, 32, 32)  # define bin regions
+edges = np.load("bin_edges.npy")  # load bin regions
+A_Ts = np.load("bin_A_T.npy")  # load P asymmetries
+A_Tbars = np.load("bin_A_Tbar.npy")  # load P conjugate asymmetries
+A_CPs = np.load("bin_A_CP.npy")  # load CP asymmetries
 
+PrintBins(bin_regions, edges)  # shows the bins in a table
+PlotData(A_Ts, A_Tbars, A_CPs)  # plot the data

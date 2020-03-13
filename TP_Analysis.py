@@ -1,28 +1,26 @@
 """
-Created on %(date)
+Created on 30 ‎October ‎2019
 
-@author: % Shyam Bhuller
+@author: Shyam Bhuller
+
+@Description: Is a Multipurpose script used for Analysis For the Msci Project. Has no real Objective and
+serves as a test bed for larger functions which I have create over the duration of the project.
 """
-import Kinematic as kin  # my own module
-import StatTools as st  # my own module
-import Plotter as pt  # my own module
-import DataManager as dm  # my own module
-import uproot
-#import phasespace as pp
+import Kinematic as kin  # vecotrised 4-vector kineamtics
+import Plotter as pt  # generic plotter with consistent formatting and curve fitting
+import DataManager as dm  # handles data opened from data files
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 from scipy import stats
 from scipy.optimize import curve_fit
 from math import log10, floor
-from scipy.special import factorial
-import glob
-import pandas as pd
 
+"""Round x to the 1st significant figure of y"""
 def round_to(x, y):
     return round(x, -int(floor(log10(abs(y)))))
 
 
+"""Messes around with the order of the particle dictionary and removes the parent particle."""
 def Rearrange(particles):
     for particle in particles:
         p = particles[particle]
@@ -32,15 +30,20 @@ def Rearrange(particles):
     return particles
 
 
+"""Breit Wigner distribution with and ampltitude"""
 def BW(x, A, M, T):
-    gamma = np.sqrt(M**2 * (M**2 + T**2))
+    # see https://en.wikipedia.org/wiki/Relativistic_Breit%E2%80%93Wigner_distribution for its definition
+    gamma = np.sqrt(M**2 * (M**2 + T**2))  # formula is complex, so split it into multiple terms
     k = A * ((2 * 2**0.5)/np.pi) * (M * T * gamma)/((M**2 + gamma)**0.5)
     return k/((x**2 - M**2)**2 + (M*T)**2)
 
 
-def BWMulti(x, A1, M1, T1, A2, M2, T2, A3, M3, T3):#, M4, T4, M5, T5):
-    return BW(x, A1, M1, T1) + BW(x, A2, M2, T2) + BW(x, A3, M3, T3)# + BW(x, M4, T4) + BW(x, M5, T5)
+"""A linear sum of 3 Breit Wigner distributions, used to fit data with multiple resonances."""
+def BWMulti(x, A1, M1, T1, A2, M2, T2, A3, M3, T3):
+    return BW(x, A1, M1, T1) + BW(x, A2, M2, T2) + BW(x, A3, M3, T3)
 
+
+"""This function tried using a Tensorflow event generator in python. No longer used"""
 """
 def Phasedf(n):
     n = int(n)
@@ -63,7 +66,9 @@ def Phasedf(n):
 """
 
 
-"""computes dalitz plot of D -> K_s pi+ pi-, shows no features of the phasespace scene in real life so phase space is uniform"""
+"""Computes dalitz plot of D -> K_s pi+ pi-, shows no features of the phasespace scene in real life so phase space is uniform.
+No longer used."""
+"""
 def Uniform2():
     # second attempt to check if generated decays are uniform in phasespace
 
@@ -80,37 +85,10 @@ def Uniform2():
 
     #plt.hist(m_Kspp, 50)
     #plt.hist(m_Kspm, 50)
+"""
 
 
-"""Fits Breit Wigner curve to invariant mass plots and returns resonance mass and lifetime in MeV"""
-def BWCurve(E, plot=False):
-    """E must be in units of GeV"""
-    hist, bins = np.histogram(E, bins=50, density=1)
-    x = (bins[:-1] + bins[1:])/2  # center of bins
-
-    popt, cov = curve_fit(BW, x, hist, p0=[1, 1])
-
-    x_inter = np.linspace(x[0], x[-1], 500)
-    y = BW(x_inter, *popt)
-
-    _, p = stats.chisquare(hist, BW(x, *popt))
-
-    p = stats.norm.ppf(p)
-
-    if(plot is True):
-        plt.bar(x, hist, 0.01)
-        plt.plot(x_inter, y, color='r')
-        plt.vlines(popt[0], min(y), max(y), linewidth=2, linestyle="--")
-        plt.hlines(max(y)/2, -popt[1]/2 + popt[0], popt[1]/2 + popt[0], linewidth=2, linestyle="--")
-        plt.xlabel("$E_{K^{+}\pi^{-}}(GeV)$", fontsize=14)
-        plt.ylabel("Normlaised count", fontsize=14)
-
-    popt *= 1000
-    cov *= 1000
-    return [popt[0], cov[0, 0]], [popt[1], cov[1, 1]]
-
-
-"""Check if you saved a file already, will contain scores"""
+"""Check if you saved a file already, will contain scores. No longer used."""
 """
 def Data_Save(repeats):
     samples = 1000
@@ -132,114 +110,150 @@ def Data_Save(repeats):
 """
 
 
+"""Fits Breit Wigner curve to invariant mass plots and returns resonance mass and lifetime in MeV"""
+def BWCurve(E, plot=False):
+    """E must be in units of GeV"""
+    hist, bins = np.histogram(E, bins=50, density=1)  # gets bins invariant masses
+    x = (bins[:-1] + bins[1:])/2  # center of bins
+
+    popt, cov = curve_fit(BW, x, hist, p0=[1, 1])  # perform least squares fit of invariant mass
+
+    x_inter = np.linspace(x[0], x[-1], 500)  # generate interpolated data for plotting
+    y = BW(x_inter, *popt)
+
+    _, p = stats.chisquare(hist, BW(x, *popt))  # caculate a chisquare test
+
+    p = stats.norm.ppf(p)  # get goodness of fit in sigma
+
+    """Plots histogram and fitted data as well as calculated fit values"""
+    if(plot is True):
+        plt.bar(x, hist, 0.01)  # plot histogram
+        plt.plot(x_inter, y, color='r')  # plot fit
+        plt.vlines(popt[0], min(y), max(y), linewidth=2, linestyle="--")  # plot invariant mass location
+        plt.hlines(max(y)/2, -popt[1]/2 + popt[0], popt[1]/2 + popt[0], linewidth=2, linestyle="--")  # plot width
+        plt.xlabel("$E_{K^{+}\pi^{-}}(GeV)$", fontsize=14)
+        plt.ylabel("Normlaised count", fontsize=14)
+
+    popt *= 1000  # convert GeV to MeV
+    cov *= 1000
+    return [popt[0], cov[0, 0]], [popt[1], cov[1, 1]]
+
+
 """Checks how A_CP varies with sample size"""
 def CPConvergenceTest():
     value = []
     error = []
-    eventFiles = dm.GetFileNames('\Samples')
+    eventFiles = dm.GetFileNames('\Samples')  # get filenames
     eventFiles_CP = dm.GetFileNames('\Samples_CP')
+
     for i in range(len(eventFiles)):
-        p = dm.AmpGendf(eventFiles[i], False)
-        pbar = dm.AmpGendf(eventFiles_CP[i], True)
+        p = dm.AmpGendf(eventFiles[i], False)  # generate particle data
+        pbar = dm.AmpGendf(eventFiles_CP[i], True) # generate CP particle data
 
-        C_T = kin.Scalar_TP(kin.Vector_3(p['p_3']), kin.Vector_3(p['p_4']), kin.Vector_3(p['p_1']))
-        C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar['p_3']), kin.Vector_3(pbar['p_4']), kin.Vector_3(pbar['p_1']))
+        C_T = kin.Scalar_TP(kin.Vector_3(p['p_3']), kin.Vector_3(p['p_4']), kin.Vector_3(p['p_1']))  # calcualtes scalar triple product
+        C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar['p_3']), kin.Vector_3(pbar['p_4']), kin.Vector_3(pbar['p_1']))# -sign for parity flip
 
-        A_T = kin.TP_Amplitude(C_T)
+        A_T = kin.TP_Amplitude(C_T)  # calculate parity asymmetries
         A_Tbar = kin.TP_Amplitude(C_Tbar)
 
-        A_CP = kin.A_CP(A_T, A_Tbar)
+        A_CP = kin.A_CP(A_T, A_Tbar)  # calculate A_CP
         value.append(A_CP[0])
         error.append(A_CP[1])
 
-    pt.ErrorPlot([np.linspace(1, 10, len(eventFiles)), value], axis=True, y_error=error, x_axis="Number of Events ($10^{5}$)", y_axis="$\mathcal{A}_{CP}$")
+    pt.ErrorPlot([np.linspace(1, 10, len(eventFiles)), value], axis=True, y_error=error, x_axis="Number of Events ($10^{5}$)", y_axis="$\mathcal{A}_{CP}$")  # plots data
 
 
 """Checks if the seed of the generator significantly affects A_CP"""
 def Seed_test():
-    fileNames = dm.GetFileNames('\seed_test')
-    events = fileNames[0:5]
-    events_CP = fileNames[5:10]
+    fileNames = dm.GetFileNames('\seed_test')  # get filenames
+    events = fileNames[0:5]  # split the dataset in half
+    events_CP = fileNames[5:10]  # make this half CP data
 
     value = []
     error = []
     for i in range(5):
-        p = dm.AmpGendf(events[i], False)
+        p = dm.AmpGendf(events[i], False)  # generate particle data
         pbar = dm.AmpGendf(events_CP[i], True)
 
-        C_T = kin.Scalar_TP(kin.Vector_3(p['p_3']), kin.Vector_3(p['p_4']), kin.Vector_3(p['p_1']))
+        C_T = kin.Scalar_TP(kin.Vector_3(p['p_3']), kin.Vector_3(p['p_4']), kin.Vector_3(p['p_1']))  # calcualtes scalar triple product
         C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar['p_3']), kin.Vector_3(pbar['p_4']), kin.Vector_3(pbar['p_1']))
+
+        A_T = kin.TP_Amplitude(C_T)  # calculate parity asymmetries
+        A_Tbar = kin.TP_Amplitude(C_Tbar)
+
+        A_CP = kin.A_CP(A_T, A_Tbar)  # calculate A_CP
+        value.append(A_CP[0])
+        error.append(A_CP[1])
+
+    pt.ErrorPlot([np.linspace(1, 5, 5), value], axis=True, y_error=error, x_axis="Iteration", y_axis="$\mathcal{A}_{CP}$")  # plots data
+
+
+"""Same as CPCOnvergenceTest, but does for all asymmetries and is compatible for analysing
+much larger sample sizes and for events with random seeds."""
+def Convergence_test2():
+    direc = "\Samples"  # direectory to look for
+    direc_CP = direc + "_CP"  # directory for conjugate events
+    samples = ["1K", "10K", "100K", "1000K", "10000K"]  # folder names
+
+
+    A_Ts = []
+    A_Tbars = []
+    A_CPs = []
+    """Will go through each folder and will calculate the asymmetry for a given event size.
+    Does this for each seed and merges the data into one list"""
+    for i in range(len(samples)):
+        filenames = dm.GetFileNames(direc+"\\"+samples[i])  # get ROOT file for the particular sample
+        filenames_CP = dm.GetFileNames(direc_CP+"\\"+samples[i]+"_CP")  # .. conjugate sample
+        C_T = []
+        C_Tbar = []
+        """Opens the jth files for the regular and conjugate sample and computed C_T"""
+        for j in range(len(filenames)):
+            p = dm.AmpGendf(filenames[j], False)  # gets data from the file
+            pbar = dm.AmpGendf(filenames_CP[j], True)  # gets conjugate data
+            tmp = kin.Scalar_TP(kin.Vector_3(p["p_3"]), kin.Vector_3(p["p_4"]), kin.Vector_3(p["p_1"]))  # C_T
+            C_T.append(tmp)  # add to the list
+            tmp = -kin.Scalar_TP(kin.Vector_3(pbar["p_3"]), kin.Vector_3(pbar["p_4"]), kin.Vector_3(pbar["p_1"]))  # -C_Tbar
+            C_Tbar.append(tmp)
+
+
+        C_T = np.hstack(C_T)  # merges the data from each individual seed
+        C_Tbar = np.hstack(C_Tbar)
 
         A_T = kin.TP_Amplitude(C_T)
         A_Tbar = kin.TP_Amplitude(C_Tbar)
 
-        A_CP = kin.A_CP(A_T, A_Tbar)
-        value.append(A_CP[0])
-        error.append(A_CP[1])
+        A_CPs.append(kin.A_CP(A_T, A_Tbar))  # add asymmetries to a list to save
+        A_Ts.append(A_T)
+        A_Tbars.append(A_Tbar)
+        print(i)
 
-    pt.ErrorPlot([np.linspace(1, 5, 5), value], axis=True, y_error=error, x_axis="Iteration", y_axis="$\mathcal{A}_{CP}$")
-
-
-def PWaveAmp_test():
-    fileNames = dm.GetFileNames('\Amp_test')
-    rel_Amp = []
-    for i in range(len(fileNames)):
-        string = fileNames[i][15:-4]
-        #string = fileNames[i][15:-8]
-        #string = fileNames[i][27:-5]
-        num = float(string)
-        rel_Amp.append(num)
-
-    zipped_1 = zip(rel_Amp, fileNames)
-    fileNames = [x for _, x in natsorted(zipped_1, alg=ns.IGNORECASE)]
-    rel_Amp = natsorted(rel_Amp, alg=ns.IGNORECASE)
-
-    factors = [1E-5, 1E-4, 1E-3, 1E-2, 1E-1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 1E1, 1E2, 1E3, 1E4, 1E5]
-
-    value = []
-    error = []
-    for i in range(len(rel_Amp)):
-        p = dm.AmpGendf(fileNames[i], False)
-        C_T = kin.Scalar_TP(kin.Vector_3(p['p_3']), kin.Vector_3(p['p_4']), kin.Vector_3(p['p_1']))
-        A_T = kin.TP_Amplitude(C_T)
-        value.append(A_T[0])
-        error.append(A_T[1])
-
-    pt.ErrorPlot([factors, value], axis=True, y_error=error, x_axis="relative P-wave amplitudes", y_axis="$A_{T}$")
-    return value, error
+    np.save("Convergence_test/A_T", A_Ts)  # save calculated data into a file for later use
+    np.save("Convergence_test/A_Tbar", A_Tbars)
+    np.save("Convergence_test/A_CP", A_CPs)
 
 
+"""Plots asymmetries for the data calulated by Convergence_test2"""
+def PlotConvergence():
+    x = [1E3, 1E4, 1E5, 1E6, 1E7]  # number of events per sample
+    A_T = np.load("Convergence_Test/A_T.npy")  # load the numpy data
+    A_Tbar = np.load("Convergence_Test/A_Tbar.npy")
+    A_CP = np.load("Convergence_Test/A_CP.npy")
+
+    Asyms = [A_T, A_Tbar, A_CP]  # list of data to plot
+    labels = ["$A_{T}$", "$\\bar{A}_{T}$", "$\\mathcal{A}_{CP}$"]  # y labels
+
+    loc = 131  # initial figure location
+    j = 0  # which figure to plot to - 1
+    """Will plot each asymmetry in a figure"""
+    for Asym in Asyms:
+        plt.subplot(loc+j)  # assign figure
+        mean = [Asym[i][0] for i in range(len(Asym))]  # get the mean values
+        error = [Asym[i][1] for i in range(len(Asym))]  # get the errors
+        pt.ErrorPlot((x, mean), y_error=error, x_axis="Number of Events", axis=True, y_axis=labels[j])  # plot with error bars
+        plt.xscale("log")  # switch to a log scale on x
+        j+=1  # move on the the next figure
 
 
-
-#"""Main Body"""
-"""
-datas = dm.GenerateDataFrames('\Phase-0', False)
-datas_CP = dm.GenerateDataFrames('\Phase-0_CP', True)
-
-p = datas[9*10:(9+1)*10]
-p = dm.MergeData(p)
-pbar = datas_CP[9*10:(9+1)*10]
-pbar = dm.MergeData(pbar)
-
-C_T = kin.Scalar_TP(kin.Vector_3(p[3]), kin.Vector_3(p[4]), kin.Vector_3(p[1]))
-C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar[3]), kin.Vector_3(pbar[4]), kin.Vector_3(pbar[1]))
-
-A_T = kin.TP_Amplitude(C_T)
-"""
-
-df = pd.read_pickle('Data_sig_tos_weights.pkl')
-opt_cut = 0.9979
-df = df[df.NN_weights > opt_cut]
-### to remove multiple candidates if you care – there are about 1-2% of these
-df = df.drop_duplicates(subset = ['runNumber', 'eventNumber'], keep = 'first')
-sWeights = df.sWeights.to_numpy()
-names = df.head()
-#A_Tbar = kin.TP_Amplitude(C_Tbar)
-
-#A_CP = kin.A_CP(A_T, A_Tbar)
-
-
-
+"""Main Body"""
 
 
