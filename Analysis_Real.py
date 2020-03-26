@@ -50,11 +50,49 @@ def BoostIntoRest(p):
 
 
 """Prepares real data so that it is returned as a list and is boosted into the COM frame."""
-def PrepareData(name):
-    p, pbar, weights, weightsbar = dm.ReadRealData(name)  # get the particle dictionaries and weights, splits regular to conjugate
+def PrepareData(name, cut):
+    p, pbar, weights, weightsbar = dm.ReadRealData(name, cut)  # get the particle dictionaries and weights, splits regular to conjugate
     p = BoostIntoRest(p)  # Boosts particles into the COM frame
     pbar = BoostIntoRest(pbar)
     return p, pbar, weights, weightsbar
+
+
+"""sorts list of data from different files by particle type rather than file"""
+def RearrangeParticleLists(lst):
+    tmp = []  # final list to return
+    for i in range(5):
+        tmp2 = []  # list of the same particle in the different event files
+        for j in range(len(lst)):
+            tmp2.append(lst[j][i])
+        tmp.append(tmp2)
+    return tmp
+
+
+
+"""Prepares real data from multiple files and merges them together."""
+def ReadRealDataMulti(names, cuts):
+    global ps, pbars, ws, wbars
+    ps = []
+    pbars = []
+    ws = []
+    wbars = []
+    """Get particle data in Rest frame of COM as well as weights"""
+    for i in range(len(files)):
+        p, pbar, w, wbar = PrepareData(files[i] + '.pkl', cuts[i])  # get run 1 data
+        ps.append(p)
+        pbars.append(pbar)
+        ws.append(w)
+        wbars.append(wbar)
+    
+    ps = RearrangeParticleLists(ps)  # switches the ordering of the list, see function for more
+    pbars = RearrangeParticleLists(pbars)
+    
+    p = [np.concatenate(ps[x]) for x in range(5)]  # merge particle data from different files
+    pbar = [np.concatenate(pbars[x]) for x in range(5)]
+    w = np.concatenate(ws)  # merge weights from different data files
+    wbar = np.concatenate(wbars)
+    return p, pbar, w, wbar
+
 
 
 """Plots unweighted data and weighted data for a visual comparison"""
@@ -267,16 +305,9 @@ def P_Asym(w, C_T):
 
 
 """Analyse the data by summing the weights to get the yields"""
-def Sum_Analysis():
-    p, pbar, w, wbar = PrepareData('Data_sig_tos_weights.pkl')  # get run 1 data
-    p2, pbar2, w2, wbar2 = PrepareData('Data_sig_tos_weights-Run2.pkl')  # get run 2 data
-
-    """Merge run 1 and run 2 data"""
-    p = [np.concatenate((p[x], p2[x])) for x in range(5)]  # merge each list in the particle dictionary and keep it in a list
-    pbar = [np.concatenate((pbar[x], pbar2[x])) for x in range(5)]  # ...
-    w = np.concatenate((w, w2))
-    wbar = np.concatenate((wbar, wbar2))
-
+def Sum_Analysis(names, cuts):
+    global p, pbar, w, wbar
+    p, pbar, w, wbar = ReadRealDataMulti(names, cuts)  # get particles data in the rest frame of COM for multiple event files, with conjugate decays tagged.
 
     C_T = kin.Scalar_TP(kin.Vector_3(p[3]), kin.Vector_3(p[4]), kin.Vector_3(p[1]))
     C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar[3]), kin.Vector_3(pbar[4]), kin.Vector_3(pbar[1]))
@@ -299,16 +330,13 @@ def Sum_Analysis():
 
     print(np.sum(w))  # yield
     print(np.sum(wbar))  # conjugate yield
+    print(np.sum(w) + np.sum(wbar))  # total yield
 
 
 
 """Anaylsis Asuuming the signal near the resonance contains no background"""
-def NoWeightAnalysis(plot=True):
-    p, pbar, _, _ = PrepareData('Data_sig_tos_weights.pkl')
-    p2, pbar2, _, _ = PrepareData('Data_sig_tos_weights-Run2.pkl')
-
-    p = [np.concatenate((p[x], p2[x])) for x in range(5)]
-    pbar = [np.concatenate((pbar[x], pbar2[x])) for x in range(5)]
+def NoWeightAnalysis(names, cuts, plot=True):
+    p, pbar, _, _ = ReadRealDataMulti(names, cuts)
 
     C_T = kin.Scalar_TP(kin.Vector_3(p[3]), kin.Vector_3(p[4]), kin.Vector_3(p[1]))
     C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar[3]), kin.Vector_3(pbar[4]), kin.Vector_3(pbar[1]))
@@ -373,3 +401,10 @@ def NoWeightAnalysis(plot=True):
 
 
 """Main Body"""
+files = ["tos_Run1", "tis_Run1", "tos_Run2", "tis_Run2"]
+#files = ["Data_sig_tos_weights-Run1", "Data_sig_tis_weights-Run1", "Data_sig_tos_weights-Run2", "Data_sig_tis_weights-Run2"]
+cuts = [0.9968, 0.9988, 0.9693, 0.9708]
+
+#p, pbar, w, wbar = ReadRealDataMulti(files, cuts)
+
+Sum_Analysis(files, cuts)
