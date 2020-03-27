@@ -12,10 +12,10 @@ import Plotter as pt  # generic plotter with consistent formatting and curve fit
 import DataManager as dm  # handles data opened from data files
 import time
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 """Analyses and plots parity asymmetry varying the relative p-wave amplitude"""
-def AnalysePwave(directory, label, CP=False, color=None, marker=None):
+def AnalysePwave(directory, factors, label, CP=False, plot=True, color=None, marker=None):
     data = dm.GenerateDataFrames(directory, CP) # gets particle data from the event files in directory
 
     """"Adjusts value of C_T if we use CP data or not"""
@@ -26,7 +26,6 @@ def AnalysePwave(directory, label, CP=False, color=None, marker=None):
 
     value = []  # mean asymmetry value
     error = []
-    factors = [1E-5, 1E-4, 1E-3, 1E-2, 1E-1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 1E1, 1E2, 1E3, 1E4, 1E5]  # relative p-wave amplitudes
     for i in range(len(factors)):
         data_amp = data[i*10:(i+1)*10]  # gets every 10 data points
         data_amp = dm.MergeData(data_amp)  # combines the different seeded data into one set
@@ -38,17 +37,20 @@ def AnalysePwave(directory, label, CP=False, color=None, marker=None):
         error.append(A_T[1]*100)
 
     # will return the plot so figures can be built
-    return pt.ErrorPlot([factors, value], label=label, legend=True, axis=True, y_error=error, x_axis="relative P-wave amplitudes", y_axis="", capsize=5, markersize=5, linestyle="-", marker=marker,color=color)
+    if plot is True:
+        return pt.ErrorPlot([factors, value], label=label, legend=True, axis=True, y_error=error, x_axis="relative P-wave amplitudes", y_axis="", capsize=5, markersize=5, linestyle="-", marker=marker,color=color)
+    # in case we want to do something else
+    if plot is False:
+        return value, error
 
 
 """Analyses and plots A_CP varying the relative p-wave amplitude"""
-def AnalyseCPwave(direct, direct_CP, label):
+def AnalyseCPwave(direct, direct_CP, factors, label, plot=True):
     datas = dm.GenerateDataFrames(direct, False)  # gets particle data from the event files in directory
     datas_CP = dm.GenerateDataFrames(direct_CP, True)  # gets particle CP data from the event files in directory
 
     value = []  # mean asymmetry value
     error = []
-    factors = [1E-5, 1E-4, 1E-3, 1E-2, 1E-1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 1E1, 1E2, 1E3, 1E4, 1E5]  # relative p-wave amplitudes
     for i in range(len(factors)):
         data_amp = datas[i*10:(i+1)*10]  # gets every 10 data points
         data_amp = dm.MergeData(data_amp)  # combines the different seeded data into one set
@@ -67,11 +69,15 @@ def AnalyseCPwave(direct, direct_CP, label):
         error.append(A_CP[1])
 
     # will return the plot so figures can be built
-    return pt.ErrorPlot([factors, value], label=label, legend=False, axis=True, y_error=error, x_axis="relative P-wave amplitudes", y_axis="$\mathcal{A}_{CP}$")
+    if plot is True:
+        return pt.ErrorPlot([factors, value], label=label, legend=False, axis=True, y_error=error, x_axis="relative P-wave amplitudes", y_axis="$\mathcal{A}_{CP}$")
+    # in case we want to do something else
+    if plot is False:
+        return value, error
 
 
 """Function used to plot A_T or A_CP for varying SP interferences, plots different phases in different figures"""
-def MultiFigure(phases, labels):
+def MultiFigure(phases, factors, labels):
     plotpos = 241  # create a 2 row, 4 column figure
     
     """Analyse and plot the asymmetries"""
@@ -85,9 +91,9 @@ def MultiFigure(phases, labels):
         ax.set_ylim([-0.06, 0.06])  # bound the yaxis for every plot
         ax.set_title(labels[i])  # set the title as the phase
 
-        AnalysePwave(folder, "$A_{T}$", False)  # plot A_T
-        #AnalysePwave(folder_CP, "$\\bar{A}_{T}$", True)  # plot A_Tbar
-        #AnalyseCPwave(folder, folder_CP, "")  # plot A_CP
+        AnalysePwave(folder, factors, "$A_{T}$", False)  # plot A_T
+        #AnalysePwave(folder_CP, factors, "$\\bar{A}_{T}$", True)  # plot A_Tbar
+        #AnalyseCPwave(folder, folder_CP, factors, "")  # plot A_CP
 
         """define the legend only once"""
         if(i == 0):
@@ -100,12 +106,12 @@ def MultiFigure(phases, labels):
 
 
 """Function used to plot A_T or A_CP for varying SP interferences, plots all phases in different figures"""
-def SingleFigure(phases, labels):
+def SingleFigure(phases, factors, labels):
     color=['red', 'magenta', 'purple', 'blue', 'cyan', 'lime', 'yellow', 'orange']  # define the color for each phase
-    for i in range(8):
+    for i in range(len(phases)):
         s = time.time()
         folder = "\Phase-" + str(phases[i])  # directory to open
-        AnalysePwave(folder, labels[i], False, color[i])  # plot A_T
+        AnalysePwave(folder, factors, labels[i], False, color[i])  # plot A_T
         e = time.time()
         print('time:' + str(e-s))
 
@@ -116,8 +122,21 @@ def SingleFigure(phases, labels):
 
 """Main Body call a function here or in the spyder console"""
 """Define phases and labels for each plot"""
+factors = [1E-5, 1E-4, 1E-3, 1E-2, 1E-1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 1E1, 1E2, 1E3, 1E4, 1E5]  # relative p-wave amplitudes
 phases = [0, 45, 90, 135, 180, 225, 270, 315]
 labels = ['$0$', '$\\frac{\pi}{4}$', '$\\frac{\pi}{2}$', '$\\frac{3\pi}{4}$',
           '$\pi$', '$\\frac{5\pi}{4}$', '$\\frac{3\pi}{2}$', '$\\frac{7\pi}{4}$']
 
-SingleFigure(phases, labels)
+#SingleFigure(phases, factors, labels)
+
+for i in range(len(phases)):
+    s = time.time()
+    folder = "\Phase-" + str(phases[i])  # directory to open
+    value, error = AnalysePwave(folder, factors, labels[i], plot=False)
+    np.save("interference"+folder+"_value"+".npy", value)
+    np.save("interference"+folder+"_error"+".npy", error)
+    e = time.time()
+    print(e-s)
+
+np.save("interference\\factors.npy", factors)
+np.save("interference\\phases.npy", phases)

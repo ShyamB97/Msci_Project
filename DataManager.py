@@ -142,10 +142,9 @@ def ConstructParticle(particleName, df, tags):
 
 
 """Reads the Real Data (stored in a pickle file) and returns particles dictionary and the signal weightings"""
-def ReadRealData(name='Data_sig_tos_weights.pkl'):
+def ReadRealData(name, cut):
     df = pd.read_pickle(name)  # read pickle file
-    opt_cut = 0.9979  # global efficiency of data
-    df = df[df.NN_weights > opt_cut]  # get data with NN_weights greater then the efficiency
+    df = df[df.NN_weights > cut]  # get data with NN_weights greater then the efficiency
     df = df.drop_duplicates(subset = ['runNumber', 'eventNumber'], keep = 'first')  # remove duplicates
 
     totalWeights = df.sWeights.to_numpy()  # get weights of the events

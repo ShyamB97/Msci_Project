@@ -1,0 +1,46 @@
+Parameter B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}_Re 0 47.8919 58.5667 3430.06 0 -649.81 0 0 0 1051.11 0.895392 1818.85 7.48841 -1178.15 35.9577 7461.36 0 
+Parameter B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}_Im 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+Parameter B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}_Re 0 -9.69787 11.451 -649.81 0 131.126 0 0 0 -209.004 1.40583 -361.929 0.222928 238.271 -12.7705 -1482.35 0 
+Parameter B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}_Im 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+Parameter B0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}}_Re 2 2.093 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+Parameter B0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}}_Im 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+Parameter B0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}}_Re 0 15.6986 18.5108 1051.11 0 -209.004 0 0 0 342.648 -11.0759 582.696 3.84923 -383.593 17.1318 2390.32 0 
+Parameter B0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}}_Im 0 -32.1059 10.2312 0.895392 0 1.40583 0 0 0 -11.0759 104.677 -8.89963 -39.4396 5.04904 8.37484 -14.6006 0 
+Parameter B0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}}_Re 0 27.1834 31.839 1818.85 0 -361.929 0 0 0 582.696 -8.89963 1013.72 -1.36177 -664.575 31.7283 4144.72 0 
+Parameter B0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}}_Im 0 84.9084 7.06202 7.48841 0 0.222928 0 0 0 3.84923 -39.4396 -1.36177 49.8722 1.84006 8.1112 -6.5887 0 
+Parameter B0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}}_Re 0 -17.8757 21.0327 -1178.15 0 238.271 0 0 0 -383.593 5.04904 -664.575 1.84006 442.375 -24.1464 -2722.74 0 
+Parameter B0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}}_Im 0 17.8196 6.49982 35.9577 0 -12.7705 0 0 0 17.1318 8.37484 31.7283 8.1112 -24.1464 42.2476 131.825 0 
+Parameter B0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}}_Re 0 112.273 130.627 7461.36 0 -1482.35 0 0 0 2390.32 -14.6006 4144.72 -6.5887 -2722.74 131.825 17063.4 0 
+Parameter B0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}}_Im 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+FitQuality 171.32651 32 9 -86.407069 0
+FitFraction B0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 0.33776954 0.069341347
+FitFraction B0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 0.19717751 0.086503081
+FitFraction B0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}} 0.089753609 0.024728385
+FitFraction B0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}} 0.08688932 0.025066839
+FitFraction B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}} 0.041314129 0.0096531758
+FitFraction B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}} 0.02773822 0.013883805
+FitFraction B0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}} 0.00038523684 0.00080501956
+FitFraction Sum_B0 0.78102756 0.17599294
+FitFraction B0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}}xB0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 0.10892236 0.088289227
+FitFraction B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}} 0.00039400727 0.00038272194
+FitFraction B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 8.7392877e-05 1.3807087e-05
+FitFraction B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} -6.0843754e-05 1.7670919e-05
+FitFraction B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}} 4.6631643e-05 1.184371e-05
+FitFraction B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 4.0732823e-05 2.7746436e-05
+FitFraction B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 2.5847083e-05 1.9284052e-05
+FitFraction B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}} 2.2751333e-05 7.7475796e-06
+FitFraction B0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} -2.0139631e-05 4.1720178e-06
+FitFraction B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}} 1.6837175e-05 7.2588719e-06
+FitFraction B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}} 1.1901757e-05 2.4320866e-06
+FitFraction B0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}}xB0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}} 6.2109886e-06 9.0425986e-06
+FitFraction B0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}}xB0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 6.0161019e-06 4.7928213e-06
+FitFraction B0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{NonResS0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} -5.6050596e-06 2.5707829e-06
+FitFraction B0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}}xB0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}} -4.6211629e-06 5.5010958e-06
+FitFraction B0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}} -3.2890331e-06 2.7759205e-06
+FitFraction B0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{NonResS0{D0,Dbar0},K*(892)0{K+,pi-}} -2.0618163e-06 2.2759602e-06
+FitFraction B0[D]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}} 1.006077e-06 3.2897727e-07
+FitFraction B0{K(0)*(800)0{K+,pi-},NonResS0{D0,Dbar0}}xB0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} 8.5947811e-07 8.4652901e-06
+FitFraction B0[P]{psi(4415)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}} 5.7842695e-07 5.6569965e-07
+FitFraction B0[S]{psi(3770)0{D0,Dbar0},K*(892)0{K+,pi-}}xB0{psi(4415)0{D0,Dbar0},K(0)*(1430)0{K+,pi-}} -3.5064329e-07 3.6372599e-07
+FitFraction Sum_B0_interference 0.10948622 0.087996469
+End Log

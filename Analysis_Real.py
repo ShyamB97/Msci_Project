@@ -306,7 +306,7 @@ def P_Asym(w, C_T):
 
 """Analyse the data by summing the weights to get the yields"""
 def Sum_Analysis(names, cuts):
-    global p, pbar, w, wbar
+    global C_T, C_Tbar
     p, pbar, w, wbar = ReadRealDataMulti(names, cuts)  # get particles data in the rest frame of COM for multiple event files, with conjugate decays tagged.
 
     C_T = kin.Scalar_TP(kin.Vector_3(p[3]), kin.Vector_3(p[4]), kin.Vector_3(p[1]))
@@ -402,9 +402,6 @@ def NoWeightAnalysis(names, cuts, plot=True):
 
 """Main Body"""
 files = ["tos_Run1", "tis_Run1", "tos_Run2", "tis_Run2"]
-#files = ["Data_sig_tos_weights-Run1", "Data_sig_tis_weights-Run1", "Data_sig_tos_weights-Run2", "Data_sig_tis_weights-Run2"]
 cuts = [0.9968, 0.9988, 0.9693, 0.9708]
-
-#p, pbar, w, wbar = ReadRealDataMulti(files, cuts)
 
 Sum_Analysis(files, cuts)

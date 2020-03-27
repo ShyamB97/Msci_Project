@@ -48,8 +48,8 @@ def AxisControl(legend, axis, label, x_axis, y_axis):
 
 
 """Plots a line graph with errors"""
-def ErrorPlot(data, legend=False, axis=False, label='', x_axis='', y_axis='', x_error=None, y_error=None, capsize=5, linestyle='', marker='o', markersize=5, color=None):
-    plot = plt.errorbar(data[0], data[1], y_error, x_error, capsize=capsize, linestyle=linestyle, marker=marker, markersize=markersize, label=label, color=color)  # use Matplotlib errorbars
+def ErrorPlot(data, legend=False, axis=False, label='', x_axis='', y_axis='', x_error=None, y_error=None, capsize=5, linestyle='', marker='o', markersize=5, color=None, alpha=1):
+    plot = plt.errorbar(data[0], data[1], y_error, x_error, capsize=capsize, linestyle=linestyle, marker=marker, markersize=markersize, label=label, color=color, alpha=alpha)  # use Matplotlib errorbars
     AxisControl(legend, axis, label, x_axis, y_axis)  # handle the labels, axis etc.
     return plot
 

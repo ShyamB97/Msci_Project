@@ -237,5 +237,6 @@ def A_T(lower, upper):
     A_T = (upper - lower)/(upper + lower)  # calculate parity sensitive quantitiy
     e_l = np.sqrt(lower)  # get poisson error of the samples
     e_u = np.sqrt(upper)  # ...
-    e_A_T = 1/(upper + lower) * np.sqrt(e_u**2 * (1-A_T)**2 + e_l**2 * (1+A_T)**2)  # calculate propagated error, formula dervied from partial derivities of A_T formula
+    #e_A_T = 1/(upper + lower) * np.sqrt(e_u**2 * (1-A_T)**2 + e_l**2 * (1+A_T)**2)  # calculate propagated error, formula dervied from partial derivities of A_T formula
+    e_A_T = 2/((upper+lower)**2) * np.sqrt((lower * e_u)**2 + (upper * e_l)**2)
     return A_T, e_A_T
