@@ -109,11 +109,12 @@ def CompWieght(data, x_axis, x_axisW, weights):
 def InvariantMassComp(particles, weights):
     inv_mass = particles[0][:, 0]  # get mass of p_0 (asssume already in rest frame)
 
-    plt.subplot(121)  # left figure
-    pt.Histogram(inv_mass/1000, axis=True, x_axis='$S(GeV)$', y_axis='number of events')
+    plt.subplot(211)  # left figure
+    pt.BWCurveFit(inv_mass, fit_parameters=[0, 5, 1], legend=False, binWidth=0.01, binNum=25, x_axis='$m_{B^{0}}(GeV)$', y_axis='Number of Events', axis=True)
+    #pt.Histogram(inv_mass/1000, axis=True, x_axis='$S(GeV)$', y_axis='Number of Events', bins=25)
 
-    plt.subplot(122)  # right figure
-    mass, width = pt.BWCurveFit(inv_mass, weights=weights, fit_parameters=[0, 5, 1], legend=True, binWidth=0.01, binNum=50, x_axis='$S(GeV)$', y_axis='weighted number of events', axis=True)  # fits the weighted distributions and returns the fitted masss and decay width
+    plt.subplot(212)  # right figure
+    mass, width = pt.BWCurveFit(inv_mass, weights=weights, fit_parameters=[0, 5, 1], legend=False, binWidth=0.01, binNum=25, x_axis='$m_{B^{0}}(GeV)$', y_axis='Weighted Number of Events', axis=True)  # fits the weighted distributions and returns the fitted masss and decay width
     return mass, width
 
 
@@ -306,7 +307,7 @@ def P_Asym(w, C_T):
 
 """Analyse the data by summing the weights to get the yields"""
 def Sum_Analysis(names, cuts):
-    global C_T, C_Tbar
+    global p, pbar
     p, pbar, w, wbar = ReadRealDataMulti(names, cuts)  # get particles data in the rest frame of COM for multiple event files, with conjugate decays tagged.
 
     C_T = kin.Scalar_TP(kin.Vector_3(p[3]), kin.Vector_3(p[4]), kin.Vector_3(p[1]))
@@ -404,4 +405,10 @@ def NoWeightAnalysis(names, cuts, plot=True):
 files = ["tos_Run1", "tis_Run1", "tos_Run2", "tis_Run2"]
 cuts = [0.9968, 0.9988, 0.9693, 0.9708]
 
-Sum_Analysis(files, cuts)
+#Sum_Analysis(files, cuts)
+p, pbar, w, wbar = ReadRealDataMulti(files, cuts)
+
+p = [np.concatenate((p[x], pbar[x])) for x in range(len(p))]
+w = np.concatenate((w, wbar))
+
+InvariantMassComp(p, w)

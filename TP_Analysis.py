@@ -234,6 +234,7 @@ def Convergence_test2():
 
 """Plots asymmetries for the data calulated by Convergence_test2"""
 def PlotConvergence():
+    global A_T, A_Tbar, A_CP
     x = [1E3, 1E4, 1E5, 1E6, 1E7]  # number of events per sample
     A_T = np.load("Convergence_Test/A_T.npy")  # load the numpy data
     A_Tbar = np.load("Convergence_Test/A_Tbar.npy")
@@ -255,5 +256,21 @@ def PlotConvergence():
 
 
 """Main Body"""
+"""
+p = dm.AmpGendf("Dto4_Body.root")
 
+pbar = dm.AmpGendf("CP_test.root", CP=True)
 
+C_T = kin.Scalar_TP(kin.Vector_3(p['p_3']), kin.Vector_3(p['p_4']), kin.Vector_3(p['p_1']))
+C_Tbar = -kin.Scalar_TP(kin.Vector_3(pbar['p_3']), kin.Vector_3(pbar['p_4']), kin.Vector_3(pbar['p_1']))
+
+A_T = kin.TP_Amplitude(C_T)
+A_Tbar = kin.TP_Amplitude(C_Tbar)
+
+A_CP = kin.A_CP(A_T, A_Tbar)
+
+print(A_T)
+print(A_Tbar)
+print(A_CP)
+"""
+PlotConvergence()

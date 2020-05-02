@@ -16,9 +16,7 @@ from scipy.optimize import curve_fit
 from math import log10, floor
 
 plt.style.use('default')  # set the overall plot style here
-font = {'family' : 'normal',
-        'weight' : 'normal',
-        'size'   : 16}  # set font here
+font = {'size'   : 16}  # set font here
 
 matplotlib.rc('font', **font)  # assign font
 
@@ -108,11 +106,12 @@ def BWCurveFit(data, legend=False, axis=False, label='', x_axis='', y_axis='', l
         y = BW(x_inter, *popt)  # create y values of interpoplated x values, using optimal fit parameters
         _, p = stats.chisquare(hist, BW(x, *popt))  # compute a Chi square test
         Mass = popt[1] 
-        #Decay = popt[2]  # decay with, not using this right now
+        Decay = popt[2]  # decay with, not using this right now
         Mass_Error = cov[1, 1]
-        #Decay_Error = cov[2, 2]  # decay with error
+        Decay_Error = cov[2, 2]  # decay with error
         label += " ($M_{R}$=" + str(round_to(Mass, Mass_Error)) + "$\pm$" + str(round_to(Mass_Error, Mass_Error)) + "$GeV$)"  # creates a label containing the resonance mass value predicted
-
+        #label += "\n ($\Gamma_{R}$=" + str(round_to(Decay, Decay_Error)) + "$\pm$" + str(round_to(Decay_Error, Decay_Error)) + "$GeV$)"  
+        
     """Multiple BW curves"""
     if single is False:
         y = BWMulti(x_inter, *popt)
@@ -136,6 +135,12 @@ def BWCurveFit(data, legend=False, axis=False, label='', x_axis='', y_axis='', l
 
     popt *= 1000  # convert mass and decay width into MeV
     cov *= 1000  # convert covariance matrix into MeV
+    if single is True:
+        print([popt[1], cov[1, 1]], [popt[2], cov[2, 2]])  # print resonant mass and decay width with errors
+    if single is False:
+        print([popt[1], cov[1, 1]], [popt[2], cov[2, 2]])
+        print([popt[4], cov[4, 4]], [popt[5], cov[5, 5]])
+        print([popt[7], cov[4, 4]], [popt[8], cov[8, 8]])
     return [popt[1], cov[1, 1]], [popt[2], cov[2, 2]]  # return resonant mass and decay width with errors
 
 
@@ -148,7 +153,8 @@ def BWMultiFit(data, legend=False, axis=False, labels=None, x_axis='', y_axis=''
             args = [i, x_axis, y_axis, lines, single, fit_parameters]
         else:
             args = [labels[i], x_axis, y_axis, lines, single, fit_parameters]
-        BWCurveFit(data[i], False, False, *args)  # Fit the curves but not the labels or axis, it is handled below
+        results = BWCurveFit(data[i], False, False, *args)  # Fit the curves but not the labels or axis, it is handled below
     
     AxisControl(legend, axis, labels, x_axis, y_axis)
+    return results
 

@@ -14,6 +14,7 @@ import DataManager as dm  # handles data opened from data files
 from math import log10, floor
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 
 """rounds x to the 1st significant figure of y"""
 def round_to(x, y):
@@ -262,7 +263,6 @@ def CreateData():
     iterations = [2, 2, 2, 8, 2]  # how many different bin regions should we permute through
     r = [False, False, False, False, False]  # which CM variable should we just cut at the median
     limits = [[-1, 0, 1], [-1, 0, 1], [633.5, 892, 1531.14], [3730.01, 4050.1, 4370.2], [-np.pi/2, 0, np.pi/2]]  # user defined cuts, use this if you don't want the binning algorithm to optimise the cuts for you
-    
 
     print('loading data')
     datas = dm.GenerateDataFrames('\P45_A0.75_1M', False)  # load regular particle dictionaries, each one has a unique random seed
@@ -273,7 +273,6 @@ def CreateData():
 
     p = {'p_0': p[0], 'p_1': p[1], 'p_2': p[2], 'p_3': p[3], 'p_4': p[4]}  # recreate the particle dictionary
     pbar = {'p_0': pbar[0], 'p_1': pbar[1], 'p_2': pbar[2], 'p_3': pbar[3], 'p_4': pbar[4]}
-
 
     print("calculating CM variables and C_T")
     hel_1, hel_3, m12, m34, phi, C_T = MultiSampleDalitzParameters(p, False, 1000)  # get CM variables and C_T of regular decays
@@ -289,7 +288,6 @@ def CreateData():
     print("\nbinning data")
     bins_CP, edges_CP = BinData(order, iterations, C_Tbar, 1000, r, limits, True)  # bin C_T and return the bin regions
 
-
     print("calculating asymmetries")
     A_Ts = []
     A_Tbars = []
@@ -304,26 +302,27 @@ def CreateData():
         A_CPs.append(A_CP)
 
 
-    zipped = list(zip(edges, edges_CP, A_CPs, A_Ts, A_Tbars))  # keep these parameters in a zipped object
+    # Use to reorder the bin labels if you want
+    #zipped = list(zip(edges, edges_CP, A_CPs, A_Ts, A_Tbars))  # keep these parameters in a zipped object
     # randomly shuffle the bin regions.
     # This randomly assigns a bin region to a number (its index in the list)
     # required to remove a bias in the numbering due to the binning scheme.
-    np.random.shuffle(zipped)
+    #np.random.shuffle(zipped)
+    #edges, edges_CP, A_CPs, A_Ts, A_Tbars = zip(*zipped)  # unzip data
 
-    edges, edges_CP, A_CPs, A_Ts, A_Tbars = zip(*zipped)  # unzip data
-    
-    np.save("global.npy", glob)
-    np.save("global_CP.npy", glob_CP)
-    np.save("bin_edges_CP.npy", edges_CP)
-    np.save("bin_edges.npy", edges)  # save data into a numpy array, dont want to spend forever recalculating these if possible
-    np.save("bin_A_T.npy", A_Ts)
-    np.save("bin_A_Tbar.npy", A_Tbars)
-    np.save("bin_A_CP.npy", A_CPs)
+    """Save all the data so we dont need to recalcualte the asymmetries"""
+    np.save("Bins\\global.npy", glob)
+    np.save("Bins\\global_CP.npy", glob_CP)
+    np.save("Bins\\bin_edges_CP.npy", edges_CP)
+    np.save("Bins\\bin_edges.npy", edges)
+    np.save("Bins\\bin_A_T.npy", A_Ts)
+    np.save("Bins\\bin_A_Tbar.npy", A_Tbars)
+    np.save("Bins\\bin_A_CP.npy", A_CPs)
 
 
 """Will print a table of all the bin regions, formatted for use in excel/latex"""
 def PrintBins(bin_regions, edges):
-    print("cos(theta_D)  | cos(theta_pi) |    m_Kpi     |     m_DDbar       |    phi")  # labels
+    print("cos(theta_K)  | cos(theta_D) |    m_Kpi     |     m_DDbar       |    phi")  # labels
     """Constructs the row for a single region and prints it"""
     for i in range(len(bin_regions)):
         regions = edges[i]
@@ -350,9 +349,17 @@ def PlotData(A_Ts, A_Tbars, A_CPs, A_T, A_Tbar):
         if i == 2:
             glob = A_CP
         ax = plt.subplot(plot+i)  # create the subplot
-        Asym_mean = [Asyms[i][j][0] for j in range(len(Asyms[i]))]  # get mean values
+        Asym_val = [Asyms[i][j][0] for j in range(len(Asyms[i]))]  # get mean values
         Asym_error = [Asyms[i][j][1] for j in range(len(Asyms[i]))]  # get uncertainties
-        pt.ErrorPlot([bin_regions, Asym_mean], axis=True, x_axis='Bin Region', y_axis=labels[i], y_error=Asym_error, legend=False)  # plot bin region values
+        
+        Asym_val = np.array(Asym_val)
+        Asym_error = np.array(Asym_error)
+        chisqr = np.sum((Asym_val/Asym_error)**2)
+        print(str(chisqr) + "/" + str(len(Asym_val)))
+        p = 1 - stats.chi2.cdf(chisqr, 32)
+        print(p)
+        
+        pt.ErrorPlot([bin_regions, Asym_val], axis=True, x_axis='Bin Region', y_axis=labels[i], y_error=Asym_error, legend=False)  # plot bin region values
         plt.hlines(glob[0], -5, 35, linestyle='--')  # plot line indicating the global asymmetry
         plt.fill_between(np.linspace(-5, 35, 40), glob[0] + glob[1], glob[0] - glob[1], color="black", alpha=0.1)  # 1 sigma global uncertainty region
         plt.fill_between(np.linspace(-5, 35, 40), glob[0] + 5*glob[1], glob[0] - 5*glob[1], color="black", alpha=0.1)  # 5 sigma global uncertainty region
@@ -362,17 +369,17 @@ def PlotData(A_Ts, A_Tbars, A_CPs, A_T, A_Tbar):
 
 """Main Body Call the functions above here or in the spyder terminal."""
 
-#CreateData()
+CreateData()
 
 # if data hasn't been made, call that function first
 bin_regions = np.linspace(1, 32, 32)  # define bin regions
-edges = np.load("bin_edges.npy")  # load bin regions
-edges_CP = np.load("bin_edges_CP.npy")
-A_Ts = np.load("bin_A_T.npy")  # load P asymmetries
-A_Tbars = np.load("bin_A_Tbar.npy")  # load P conjugate asymmetries
-A_CPs = np.load("bin_A_CP.npy")  # load CP asymmetries
-A_T = np.load("global.npy")
-A_Tbar = np.load("global_CP.npy")
+edges = np.load("Bins\\bin_edges.npy")  # load bin regions
+edges_CP = np.load("Bins\\bin_edges_CP.npy")
+A_Ts = np.load("Bins\\bin_A_T.npy")  # load P asymmetries
+A_Tbars = np.load("Bins\\bin_A_Tbar.npy")  # load P conjugate asymmetries
+A_CPs = np.load("Bins\\bin_A_CP.npy")  # load CP asymmetries
+A_T = np.load("Bins\\global.npy")
+A_Tbar = np.load("Bins\\global_CP.npy")
 
 #print(A_CPs[:, 0]/A_CPs[:, 1])
 

@@ -51,8 +51,8 @@ def DalitzParameters(particles):
 
 
 """Used to generate DalitzParameters for datasets too large to be computed at once."""
-def MultiSampleDalitzParameters(particles):
-    data = dm.SplitEvents(particles, 10)  # splits events into smaller sets
+def MultiSampleDalitzParameters(particles, split=10):
+    data = dm.SplitEvents(particles, split)  # splits events into smaller sets
     parameters = []
     progress = 0
 
@@ -90,11 +90,13 @@ def GeneratePlots(data, request, x_axis='', y_axis='Number of Events', alpha=0.5
         pt.Histogram_Multi(data, legend=True, axis=True, labels=['$C_{T} < 0$','$C_{T} > 0$'], x_axis=x_axis, y_axis=y_axis, alpha=alpha)
 
     if request == 'Mass':
-        pt.BWMultiFit(data, legend=True, axis=True, labels=['$C_{T} < 0$','$C_{T} > 0$'], x_axis=x_axis, y_axis=y_axis, lines=lines, single=single, fit_parameters=fit_parameters)
+        results = pt.BWMultiFit(data, legend=True, axis=True, labels=['$C_{T} < 0$','$C_{T} > 0$'], x_axis=x_axis, y_axis=y_axis, lines=lines, single=single, fit_parameters=fit_parameters)
+        return results
 
-
-particles = RetrieveData('AmpGen', 'CP_test.root', True)  # get data
-data = MultiSampleDalitzParameters(particles)  # calculate CM variables
-
+#particles = RetrieveData('AmpGen', 'Dto4_Body.root', False)  # get data
+particles = dm.GenerateDataFrames("\P45_A0.75_1M", False)
+particles = dm.MergeData(particles, 10)
+particles = {'p_0': particles[0], 'p_1': particles[1], 'p_2': particles[2], 'p_3': particles[3], 'p_4': particles[4]}
+data = MultiSampleDalitzParameters(particles, 1000)  # calculate CM variables
 
 # Use GeneratePlot() in a console or write stuff here.
